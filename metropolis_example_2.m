@@ -1,7 +1,6 @@
 % This Matlab code performs the Monte-Carlo (MC) simulation and computes a
 % an average energy and heat capacity per particle for an ensemble of N 
-% noninteracting one-dimensional harmonic
-% ocsillator at temperature T, using a Metropolis algorithm.
+% noninteracting one-dimensional harmonic ocsillator (ho) at temperature T, using a Metropolis algorithm.
 %  
 %
 % Ref. [1] E. Curotto, "Stochastic Simulations of Clusters: Quantum Methods in Flat and Curved Spaces", CPC Press (2010).
