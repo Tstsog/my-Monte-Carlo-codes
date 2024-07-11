@@ -16,10 +16,10 @@ clc; close all;
 format short
 %
 k  = 1.50;        % force parameter in harmonic potential   
-T_temp = 10.000;  % temperature, (T)
+T_temp = 10.0000;  % temperature, (T)
 %
-n_moves = 200000;  % number of Metropolis moves
-delta_x = 15.50;   % parameter used to control a rejection rate between 40 and 60%
+n_moves = 500000;  % number of Metropolis moves
+delta_x = 8.500;   % parameter used to control a rejection rate between 40 and 60%
 %
 x = 0.0;          % initial coordinate
 n_rej = 0.;       % number of rejection 
@@ -28,7 +28,14 @@ sm_v2 = 0.;       % sum of V^2
 %
 [V_pot] = pot_ho(k,x); % one-dimensional harmonic oscillator 
 %
+%%%%%%%%%%%%%%%%%%%%%%%%
+fileID_save_data_1 = fopen('metropolis_example_2.txt','w');
+%
+pot_save = zeros(n_moves, 1);
+pot_sq_save = zeros(n_moves, 1);
+%
 for ii = 1:n_moves
+    %
     xt = x + delta_x * (rand(1) - 0.5);
     %
     [V_pot_t] = pot_ho(k,xt);
@@ -38,37 +45,63 @@ for ii = 1:n_moves
     if (rand(1) < q)
         x = xt;
         V_pot = V_pot_t;
+        %
+        sm_v = V_pot;
+        sm_v2 = V_pot * V_pot;               
     else
         n_rej = n_rej + 1;
     end
-    %
-    sm_v = sm_v + V_pot;
-    sm_v2 = sm_v2 + V_pot * V_pot;        
 
+%%%
+    pot_save(ii) = sm_v;
+    pot_sq_save(ii) = sm_v2;
+    output = [ii, pot_save(ii), pot_sq_save(ii)];
+    %
+    fprintf(fileID_save_data_1, '%4.6f \t %4.6f \t %8.6f\n', output); 
 end
-%
-E_ave = sm_v/n_moves;
+fclose(fileID_save_data_1);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+read_mc_data = fopen('metropolis_example_2.txt', 'r');               % 
+read_mc_data = textscan(read_mc_data, '%f %f %f');
+mc_step_ii = read_mc_data{1};
+mc_pot_val = read_mc_data{2};
+mc_pot_sq_val = read_mc_data{3};
+
+
+%%%
+E_ave = sum(mc_pot_val)/length(mc_pot_val);
 E_exact = T_temp/2;                             % exact energy per particle, En = k_B*T/2, where k_B is the Boltzmann constant, in our case, k_B = 1.; 
-E2_ave = sm_v2/n_moves;
+E2_ave = sum(mc_pot_sq_val)/length(mc_pot_sq_val);
 E2_exact = 3.*(T_temp/2)^2;                     % exact energy per particle, En^2 = 3*(k_B*T/2)^2, where k_B is the Bolztmann constant 
 Cv_ave = (E2_ave - E_ave^2)/T_temp^2;           % heat capacity
 Cv_exact = 0.5;                                 % exact formula for C_v = 0.5*k_B*T 
 sigma_std = sqrt((E2_ave - E_ave^2)/n_moves);   % standart deviation 
 rejection_ratio = 100*(n_rej/n_moves);          % rejection in percent
-
 %
-[T_temp, E_ave, E_exact, E2_ave, E2_exact, Cv_ave, Cv_exact, sigma_std, rejection_ratio ]
+%%%
+[T_temp, E_ave, E_exact, E2_ave, E2_exact, Cv_ave, Cv_exact, sigma_std, rejection_ratio, delta_x ]
 
-%[T_temp,   E_ave,   E_exact,   E2_ave,  E2_exact,  Cv_ave,  Cv_exact, sigma_std, rejection_ratio ]
-% 0.2500    0.1269    0.1250    0.0478    0.0469    0.5065    0.5000    0.0004   51.3240
-% 0.5000    0.2525    0.2500    0.1925    0.1875    0.5149    0.5000    0.0008   51.0600
-% 1.0000    0.5026    0.5000    0.7583    0.7500    0.5058    0.5000    0.0016   47.5185
-% 2.0000    1.0040    1.0000    3.0088    3.0000    0.5002    0.5000    0.0032   48.5800
-% 2.5000    1.2354    1.2500    4.5499    4.6875    0.4838    0.5000    0.0039   44.6570
-% 3.0000    1.5042    1.5000    6.8208    6.7500    0.5065    0.5000    0.0048   50.6355
-% 5.0000    2.5061    2.5000   18.6898   18.7500    0.4964    0.5000    0.0079   45.6980
-% 8.0000    4.0167    4.0000   48.9847   48.0000    0.5133    0.5000    0.0128   47.0515
-%10.0000    5.0004    5.0000   74.7343   75.0000    0.4973    0.5000    0.0158   50.7465
+%%%
+%[T_temp,   E_ave,   E_exact,   E2_ave,  E2_exact,  Cv_ave,  Cv_exact, sigma_std, rejection_ratio, delta_x ]
+% 0.2500    0.1255    0.1250    0.0471    0.0469    0.5022    0.5000    0.0003   51.4356    2.5000
+% 0.5000    0.2496    0.2500    0.1865    0.1875    0.4968    0.5000    0.0005   45.4830    3.0000
+% 1.0000    0.5028    0.5000    0.7576    0.7500    0.5048    0.5000    0.0010   39.0448    3.5000
+% 5.0000    2.4867    2.5000   18.5241   18.7500    0.4936    0.5000    0.0050   28.7104    5.5000
+%10.0000    5.0381    5.0000   75.6615   75.0000    0.5028    0.5000    0.0100   31.0444    8.5000
+
+
+
+%%%
+figure(1)
+hold on
+plot(mc_step_ii(1:1000:length(mc_step_ii)), mc_pot_val(1:1000:length(mc_pot_val)), 'b', 'LineWidth', 1.5)
+hold off
+box on
+ylabel('\mbox{Potential value}','Interpreter','latex') % , 'Rotation',0
+xlabel('\mbox{MC step}','Interpreter','latex')
+%axis([0 n_moves 0 2])
+set(gca,'FontSize',16)
 
 
 
@@ -83,5 +116,4 @@ V_pot = 0.5*k*x.^2;
 %%%
 return
 end
-
 
